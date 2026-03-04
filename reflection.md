@@ -14,10 +14,6 @@ Answer each question in 3 to 5 sentences. Be specific and honest about what actu
 
 ## 2. How did you use AI as a teammate?
 
-- Which AI tools did you use on this project (for example: ChatGPT, Gemini, Copilot)?
-- Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
-- Give one example of an AI suggestion that was incorrect or misleading (including what the AI suggested and how you verified the result).
-
 I used only Claude for this project as an introduction to using an agent. The AI got simple bug fixes correctly.
 
 The backwards hint logic was fixed almost instantly, with the AI suggesting to switch the inequality signs.
@@ -30,24 +26,24 @@ The initial pytests made were very standard and used safe edge cases. It does no
 
 ## 3. Debugging and testing your fixes
 
-- How did you decide whether a bug was really fixed?
-- Describe at least one test you ran (manual or using pytest)  
-  and what it showed you about your code.
-- Did AI help you design or understand any tests? How?
+For debugging, I initially tested the feature through running the app and interacting with it. Then I asked the AI to generate tests for the functions that were involved throughout the program.
+
+AI explained the tests and the cases but a little more push can make AI try extreme cases to ensure that the functions work as intended and wont break.
 
 ---
 
 ## 4. What did you learn about Streamlit and state?
 
-- In your own words, explain why the secret number kept changing in the original app.
-- How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
-- What change did you make that finally gave the game a stable secret number?
+The secret number kept changing because its assignment was written at the top level of the program causing each rerun of Streamlit to call a random number each interaction.
+
+Since Streamlit doesn't host a "live" webpage, it uses "reruns" to update its display. Reruns are like page refreshes with updated values whenever something in the backend changes.
+
+Wrapping the secret number to protect it from being called each rerun kept it stable and consistent throughout a session.
 
 ---
 
 ## 5. Looking ahead: your developer habits
 
-- What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
-- What is one thing you would do differently next time you work with AI on a coding task?
-- In one or two sentences, describe how this project changed the way you think about AI generated code.
+I'd utilize multiple agents more in future projects. I never realized how organized and efficient it is to create multiple chat session. More specific prompting could also benefit my future workflows.
+
+AI generated code is not perfect, but its really really fast. Its much faster to check the code than writing everything from scratch.

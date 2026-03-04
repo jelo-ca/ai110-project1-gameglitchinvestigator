@@ -25,9 +25,40 @@ It wrote the code, ran away, and now the game is unplayable.
 
 ## 📝 Document Your Experience
 
-- [ ] Describe the game's purpose.
-- [ ] Detail which bugs you found.
-- [ ] Explain what fixes you applied.
+### Game Purpose
+
+Game Glitch Investigator is a number guessing game built with Streamlit. The player selects a difficulty level (Easy: 1–20, Normal: 1–100, Hard: 1–50), then tries to guess a secret random number within the allowed attempts. After each guess, the game provides a "Go Higher" or "Go Lower" hint. The player wins by guessing correctly before running out of attempts, and earns points based on how few attempts they used.
+
+### Bugs Found
+
+| # | Bug | Location |
+|---|-----|----------|
+| 1 | **Backwards hints** — "Go Higher" and "Go Lower" were swapped, pointing the player in the wrong direction | `logic_utils.py: check_guess()` |
+| 2 | **Secret number reset on every rerun** — the number was assigned at the top level of `app.py`, so Streamlit regenerated it on every button click | `app.py` |
+| 3 | **Attempts display off by one** — the "Attempts Left" counter showed `n+1` instead of the correct remaining count | `app.py` |
+| 4 | **New Game button broken** — clicking New Game did not properly reset game state | `app.py` |
+| 5 | **First guess not logged** — the initial guess wasn't recorded in the history until a second submit was made | `app.py` |
+| 6 | **Invalid inputs consumed attempts** — submitting empty or non-numeric input still decremented the attempt counter and was written to the guess history | `app.py` |
+| 7 | **Scoring offset bug** — a `+1` offset in `update_score` caused a first-attempt win to score 80 instead of the intended 90 | `logic_utils.py: update_score()` |
+| 8 | **Even-attempt bonus** — wrong guesses on even attempts incorrectly added points instead of deducting them | `logic_utils.py: update_score()` |
+
+### Fixes Applied
+
+1. **Backwards hints** — swapped the inequality signs in `check_guess()` so `guess > secret` returns `"Too High"` and `"Go LOWER!"`, and `guess < secret` returns `"Too Low"` and `"Go HIGHER!"`.
+
+2. **Secret number reset** — wrapped the secret number assignment in a `st.session_state` check (`if "secret" not in st.session_state`) so it is only generated once per game session and survives Streamlit reruns.
+
+3. **Attempts display** — corrected the counter expression so it accurately reflects remaining attempts without the off-by-one offset.
+
+4. **New Game button** — updated the reset handler to clear all relevant session state keys (`secret`, `attempts`, `score`, `history`, `game_over`) and trigger a proper rerun.
+
+5. **First guess logging** — moved history appending to execute immediately on the first valid submit, ensuring every guess is captured in order.
+
+6. **Invalid inputs consuming attempts** — moved the attempt-decrement and history-append logic inside the valid-guess branch so non-numeric or empty inputs are rejected with an error message and do not cost an attempt.
+
+7. **Scoring offset** — removed the `+1` offset from `update_score()` so the points formula is `100 - (10 * attempt_number)`, correctly awarding 90 points for a first-attempt win.
+
+8. **Even-attempt bonus** — removed the conditional bonus that added points on even-numbered wrong guesses; all wrong guesses now consistently deduct 5 points.
 
 ## 📸 Demo
 
