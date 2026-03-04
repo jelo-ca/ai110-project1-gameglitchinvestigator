@@ -183,39 +183,176 @@ class TestBug2And4AttemptGating:
 # ---------------------------------------------------------------------------
 
 class TestUpdateScore:
-    def test_win_on_first_attempt_gives_max_points(self):
-        # attempt_number=1 → points = max(100 - 10*(1+1), 10) = 80
+    # --- win scoring (formula: 100 - 10 * attempt_number, min 10) ---
+
+    def test_win_on_first_attempt_gives_90(self):
+        # 100 - 10*1 = 90
         score = update_score(0, "Win", 1)
-        assert score == 80
+        assert score == 90
+
+    def test_win_on_fifth_attempt_gives_50(self):
+        # 100 - 10*5 = 50
+        score = update_score(0, "Win", 5)
+        assert score == 50
 
     def test_win_score_decreases_with_more_attempts(self):
         early = update_score(0, "Win", 1)
         late  = update_score(0, "Win", 5)
         assert early > late
 
-    def test_win_score_never_goes_below_minimum(self):
-        # attempt_number=10 → raw = 100 - 110 = -10, clamped to 10
+    def test_win_at_attempt_9_hits_exact_minimum(self):
+        # 100 - 10*9 = 10 (exactly the floor, no clamping needed)
+        score = update_score(0, "Win", 9)
+        assert score == 10
+
+    def test_win_at_attempt_10_clamps_to_minimum(self):
+        # 100 - 10*10 = 0 → clamped to 10
         score = update_score(0, "Win", 10)
-        assert score >= 10
+        assert score == 10
+
+    def test_win_at_high_attempt_never_below_minimum(self):
+        # attempt_number=50 → raw = -400, clamped to 10
+        score = update_score(0, "Win", 50)
+        assert score == 10
 
     def test_win_adds_to_existing_score(self):
         score = update_score(50, "Win", 1)
-        assert score > 50
+        assert score == 140  # 50 + 90
 
-    def test_too_low_deducts_points(self):
+    # --- too high / too low always deduct 5 (even-attempt bonus removed) ---
+
+    def test_too_low_deducts_5(self):
         score = update_score(100, "Too Low", 1)
         assert score == 95
 
-    def test_too_high_on_odd_attempt_deducts_points(self):
-        # attempt_number=1 (odd) → deduct 5
+    def test_too_high_deducts_5_on_odd_attempt(self):
         score = update_score(100, "Too High", 1)
         assert score == 95
 
-    def test_too_high_on_even_attempt_adds_points(self):
-        # attempt_number=2 (even) → add 5
+    def test_too_high_deducts_5_on_even_attempt(self):
+        # Even-attempt bonus was a bug — fixed to always deduct
         score = update_score(100, "Too High", 2)
-        assert score == 105
+        assert score == 95
+
+    def test_too_high_and_too_low_deduct_identically(self):
+        assert update_score(100, "Too High", 3) == update_score(100, "Too Low", 3)
+
+    def test_score_can_go_negative(self):
+        score = update_score(3, "Too Low", 1)
+        assert score == -2
 
     def test_unknown_outcome_leaves_score_unchanged(self):
         score = update_score(42, "Unknown", 1)
         assert score == 42
+
+
+# ---------------------------------------------------------------------------
+# Edge cases — check_guess
+# ---------------------------------------------------------------------------
+
+class TestCheckGuessEdgeCases:
+    def test_zero_equals_zero_is_win(self):
+        outcome, _ = check_guess(0, 0)
+        assert outcome == "Win"
+
+    def test_negative_guess_below_negative_secret_is_too_low(self):
+        # -10 < -5  →  go higher
+        outcome, _ = check_guess(-10, -5)
+        assert outcome == "Too Low"
+
+    def test_negative_guess_above_negative_secret_is_too_high(self):
+        # -5 > -10  →  go lower
+        outcome, _ = check_guess(-5, -10)
+        assert outcome == "Too High"
+
+    def test_large_numbers_too_high(self):
+        outcome, _ = check_guess(1_000_000, 1)
+        assert outcome == "Too High"
+
+    def test_large_numbers_too_low(self):
+        outcome, _ = check_guess(1, 1_000_000)
+        assert outcome == "Too Low"
+
+    def test_min_range_boundary_win(self):
+        outcome, _ = check_guess(1, 1)
+        assert outcome == "Win"
+
+    def test_max_range_boundary_win(self):
+        outcome, _ = check_guess(100, 100)
+        assert outcome == "Win"
+
+    def test_guess_one_above_max_is_too_high(self):
+        outcome, _ = check_guess(101, 100)
+        assert outcome == "Too High"
+
+
+# ---------------------------------------------------------------------------
+# Edge cases — parse_guess
+# ---------------------------------------------------------------------------
+
+class TestParseGuessEdgeCases:
+    def test_whitespace_padded_number_is_valid(self):
+        # Python's int() strips leading/trailing whitespace
+        ok, value, _ = parse_guess("  42  ")
+        assert ok is True
+        assert value == 42
+
+    def test_multiple_decimal_points_is_invalid(self):
+        # "3.1.4" → float("3.1.4") raises ValueError
+        ok, _, _ = parse_guess("3.1.4")
+        assert ok is False
+
+    def test_lone_dot_is_invalid(self):
+        ok, _, _ = parse_guess(".")
+        assert ok is False
+
+    def test_scientific_notation_is_invalid(self):
+        # "1e5" has no "." so tries int("1e5") → ValueError
+        ok, _, _ = parse_guess("1e5")
+        assert ok is False
+
+    def test_negative_float_truncates_toward_zero(self):
+        # int(-3.7) == -3 in Python
+        ok, value, _ = parse_guess("-3.7")
+        assert ok is True
+        assert value == -3
+
+    def test_positive_float_truncates_toward_zero(self):
+        ok, value, _ = parse_guess("9.9")
+        assert ok is True
+        assert value == 9
+
+    def test_leading_plus_sign_is_valid(self):
+        ok, value, _ = parse_guess("+5")
+        assert ok is True
+        assert value == 5
+
+    def test_zero_as_float_string_is_valid(self):
+        ok, value, _ = parse_guess("0.0")
+        assert ok is True
+        assert value == 0
+
+    def test_very_large_integer_is_valid(self):
+        ok, value, _ = parse_guess("999999")
+        assert ok is True
+        assert value == 999_999
+
+
+# ---------------------------------------------------------------------------
+# Edge cases — get_range_for_difficulty
+# ---------------------------------------------------------------------------
+
+class TestGetRangeEdgeCases:
+    def test_case_sensitive_lowercase_falls_back_to_default(self):
+        # "easy" != "Easy" → falls through to default (1, 100)
+        low, high = get_range_for_difficulty("easy")
+        assert (low, high) == (1, 100)
+
+    def test_empty_string_falls_back_to_default(self):
+        low, high = get_range_for_difficulty("")
+        assert (low, high) == (1, 100)
+
+    def test_all_ranges_have_low_less_than_high(self):
+        for diff in ("Easy", "Normal", "Hard"):
+            low, high = get_range_for_difficulty(diff)
+            assert low < high, f"{diff}: low={low} is not < high={high}"
