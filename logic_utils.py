@@ -41,31 +41,26 @@ def check_guess(guess, secret):
     if guess == secret:
         return "Win", "🎉 Correct!"
 
-    try:
-        if guess > secret:
-            return "Too High", "📉 Go LOWER!"
-        else:
-            return "Too Low", "📈 Go HIGHER!"
-    except TypeError:
-        g = str(guess)
-        if g == secret:
-            return "Win", "🎉 Correct!"
-        if g > secret:
-            return "Too High", "📉 Go LOWER!"
-        return "Too Low", "📈 Go HIGHER!"
+    # FIX: Removed string-comparison fallback that gave wrong directional hints
+    # (e.g., "9" > "10" alphabetically). Claude Code identified that the fallback
+    # masked the type mismatch in app.py instead of fixing it at the source.
+    if guess > secret:
+        return "Too High", "📉 Go LOWER!"
+    return "Too Low", "📈 Go HIGHER!"
 
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
     """Update score based on outcome and attempt number."""
     if outcome == "Win":
-        points = 100 - 10 * (attempt_number + 1)
+        # FIX: Removed +1 offset; Claude Code spotted that first-attempt wins scored 80 instead of the expected 90.
+        points = 100 - 10 * attempt_number
         if points < 10:
             points = 10
         return current_score + points
 
     if outcome == "Too High":
-        if attempt_number % 2 == 0:
-            return current_score + 5
+        # FIX: Removed even-attempt bonus that rewarded overshooting the target.
+        # Claude Code flagged that adding points for a wrong guess was an illogical scoring glitch.
         return current_score - 5
 
     if outcome == "Too Low":

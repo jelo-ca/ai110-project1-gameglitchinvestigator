@@ -73,30 +73,26 @@ if st.session_state.status != "playing":
         st.error("Game over. Start a new game to try again.")
     st.stop()
 
-if submit:
-    st.session_state.attempts += 1
-
 st.info(
     f"Guess a number between {low} and {high}. "
     f"Attempts left: {attempt_limit - st.session_state.attempts}"
 )
 
 if submit:
-
+    # FIX: Merged two submit blocks and moved attempt increment inside the valid-guess branch.
+    # Claude Code identified that invalid inputs were still consuming attempts in the original split-block structure.
     ok, guess_int, err = parse_guess(raw_guess)
 
     if not ok:
         st.session_state.history.append(raw_guess)
         st.error(err)
     else:
+        st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
 
-        if st.session_state.attempts % 2 == 0:
-            secret = str(st.session_state.secret)
-        else:
-            secret = st.session_state.secret
-
-        outcome, message = check_guess(guess_int, secret)
+        # FIX: Replaced alternating str/int cast with direct int secret.
+        # Claude Code traced the type mismatch that caused wrong comparison hints every other attempt.
+        outcome, message = check_guess(guess_int, st.session_state.secret)
 
         if show_hint:
             st.warning(message)

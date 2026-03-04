@@ -18,6 +18,14 @@ Answer each question in 3 to 5 sentences. Be specific and honest about what actu
 - Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
 - Give one example of an AI suggestion that was incorrect or misleading (including what the AI suggested and how you verified the result).
 
+I used only Claude for this project as an introduction to using an agent. The AI got simple bug fixes correctly.
+
+The backwards hint logic was fixed almost instantly, with the AI suggesting to switch the inequality signs.
+
+A more misleading suggestion that Claude made was throughout fixing the attempt display. It suggested multiple fixes that led to more bugs and I had to specify that it was only the display that was wrong and not the recorded attempts itself.
+
+The initial pytests made were very standard and used safe edge cases. It does not include extreme cases which I plan to implement later on.
+
 ---
 
 ## 3. Debugging and testing your fixes
