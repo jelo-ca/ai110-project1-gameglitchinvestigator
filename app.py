@@ -1,6 +1,56 @@
 import random
+import time
 import streamlit as st
 from logic_utils import get_range_for_difficulty, parse_guess, check_guess, update_score
+
+
+def show_rolling_animation(final_number, attempt_num, prev_guess, low):
+    """Counts from the previous guess to the current guess, then locks in."""
+    placeholder = st.empty()
+    start = prev_guess if prev_guess is not None else low
+    direction = "↑" if final_number >= start else "↓"
+    steps = 22
+    for i in range(steps):
+        # Linear interpolation from start toward final_number (stops just short)
+        t = i / steps  # 0.0 … ~0.955, never reaches 1.0 so final frame stays distinct
+        rolling_num = round(start + (final_number - start) * t)
+        # Exponential slow-down: fast at start, slow near end
+        delay = 0.03 + (i / steps) ** 2 * 0.18
+        placeholder.markdown(
+            f"""
+            <div style="text-align:center; padding:18px 0;
+                        background:linear-gradient(135deg,#667eea,#764ba2);
+                        border-radius:14px; margin:8px 0;">
+              <div style="font-size:12px; color:#c8c8ff; letter-spacing:3px;
+                          text-transform:uppercase; margin-bottom:4px;">Attempt #{attempt_num}</div>
+              <div style="font-size:88px; font-weight:900; color:white; line-height:1;
+                          font-family:monospace; text-shadow:0 4px 18px rgba(0,0,0,0.35);
+                          min-width:120px; display:inline-block;">{rolling_num}</div>
+              <div style="font-size:11px; color:#b0b0ff; margin-top:6px;">{direction} counting…</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        time.sleep(delay)
+
+    # Final reveal: land on the actual guess
+    placeholder.markdown(
+        f"""
+        <div style="text-align:center; padding:18px 0;
+                    background:linear-gradient(135deg,#f093fb,#f5576c);
+                    border-radius:14px; margin:8px 0;
+                    box-shadow:0 6px 28px rgba(240,93,251,0.35);">
+          <div style="font-size:12px; color:#ffe0e0; letter-spacing:3px;
+                      text-transform:uppercase; margin-bottom:4px;">Attempt #{attempt_num} — Locked In</div>
+          <div style="font-size:88px; font-weight:900; color:white; line-height:1;
+                      font-family:monospace; text-shadow:0 4px 18px rgba(0,0,0,0.35);
+                      min-width:120px; display:inline-block;">{final_number}</div>
+          <div style="font-size:11px; color:#ffe0e0; margin-top:6px;">✓ submitted</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    time.sleep(0.8)
 
 st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
 
@@ -42,6 +92,9 @@ if "status" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+if "prev_guess" not in st.session_state:
+    st.session_state.prev_guess = None
+
 st.subheader("Make a guess")
 
 raw_guess = st.text_input(
@@ -63,6 +116,7 @@ if new_game:
     st.session_state.score = 0
     st.session_state.history = []
     st.session_state.status = "playing"
+    st.session_state.prev_guess = None
     st.success("New game started.")
     st.rerun()
 
@@ -89,6 +143,9 @@ if submit:
     else:
         st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
+
+        show_rolling_animation(guess_int, st.session_state.attempts, st.session_state.prev_guess, low)
+        st.session_state.prev_guess = guess_int
 
         # FIX: Replaced alternating str/int cast with direct int secret.
         # Claude Code traced the type mismatch that caused wrong comparison hints every other attempt.
