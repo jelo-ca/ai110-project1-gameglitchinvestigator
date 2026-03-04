@@ -1,13 +1,14 @@
+"""Streamlit UI for the Game Glitch Investigator guessing game."""
 import random
 import time
 import streamlit as st
 from logic_utils import get_range_for_difficulty, parse_guess, check_guess, update_score
 
 
-def show_rolling_animation(final_number, attempt_num, prev_guess, low):
+def show_rolling_animation(final_number, attempt_num, prev_guess, range_low):
     """Counts from the previous guess to the current guess, then locks in."""
     placeholder = st.empty()
-    start = prev_guess if prev_guess is not None else low
+    start = prev_guess if prev_guess is not None else range_low
     direction = "↑" if final_number >= start else "↓"
     steps = 22
     for i in range(steps):
@@ -26,7 +27,8 @@ def show_rolling_animation(final_number, attempt_num, prev_guess, low):
               <div style="font-size:88px; font-weight:900; color:white; line-height:1;
                           font-family:monospace; text-shadow:0 4px 18px rgba(0,0,0,0.35);
                           min-width:120px; display:inline-block;">{rolling_num}</div>
-              <div style="font-size:11px; color:#b0b0ff; margin-top:6px;">{direction} counting…</div>
+              <div style="font-size:11px; color:#b0b0ff; margin-top:6px;">
+                {direction} counting…</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -41,7 +43,8 @@ def show_rolling_animation(final_number, attempt_num, prev_guess, low):
                     border-radius:14px; margin:8px 0;
                     box-shadow:0 6px 28px rgba(240,93,251,0.35);">
           <div style="font-size:12px; color:#ffe0e0; letter-spacing:3px;
-                      text-transform:uppercase; margin-bottom:4px;">Attempt #{attempt_num} — Locked In</div>
+                      text-transform:uppercase; margin-bottom:4px;">
+            Attempt #{attempt_num} — Locked In</div>
           <div style="font-size:88px; font-weight:900; color:white; line-height:1;
                       font-family:monospace; text-shadow:0 4px 18px rgba(0,0,0,0.35);
                       min-width:120px; display:inline-block;">{final_number}</div>
@@ -133,8 +136,8 @@ st.info(
 )
 
 if submit:
-    # FIX: Merged two submit blocks and moved attempt increment inside the valid-guess branch.
-    # Claude Code identified that invalid inputs were still consuming attempts in the original split-block structure.
+    # FIX: Merged two submit blocks and moved attempt increment inside the
+    # valid-guess branch so invalid inputs no longer consume attempts.
     ok, guess_int, err = parse_guess(raw_guess)
 
     if not ok:
@@ -144,11 +147,13 @@ if submit:
         st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
 
-        show_rolling_animation(guess_int, st.session_state.attempts, st.session_state.prev_guess, low)
+        show_rolling_animation(
+            guess_int, st.session_state.attempts, st.session_state.prev_guess, low
+        )
         st.session_state.prev_guess = guess_int
 
-        # FIX: Replaced alternating str/int cast with direct int secret.
-        # Claude Code traced the type mismatch that caused wrong comparison hints every other attempt.
+        # FIX: Replaced alternating str/int cast with direct int secret to fix
+        # the type mismatch that caused wrong comparison hints every other attempt.
         outcome, message = check_guess(guess_int, st.session_state.secret)
 
         if show_hint:

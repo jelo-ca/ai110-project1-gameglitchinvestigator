@@ -1,0 +1,12 @@
+[tool.pylint.main]
+# Only lint these modules; ignore __pycache__ and test helpers automatically.
+ignore = ["__pycache__"]
+
+[tool.pylint.format]
+# Match PEP 8 extended limit used by many modern projects.
+max-line-length = 100
+
+[tool.pylint.messages_control]
+# C0116 (missing-function-docstring) – functions already have docstrings;
+# skipping the duplicate check avoids noise for one-liners.
+disable = ["C0116"]
