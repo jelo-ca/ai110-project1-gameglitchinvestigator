@@ -2,14 +2,26 @@
 import random
 import time
 import streamlit as st
-from logic_utils import get_range_for_difficulty, parse_guess, check_guess, update_score
+from logic_utils import (
+    get_range_for_difficulty,
+    parse_guess,
+    check_guess,
+    update_score,
+)
 
 
-def render_number_bar(current_guess, history, range_low, range_high, secret=None, show_secret=False):
-    """Renders an animated number bar showing the range, previous guesses, and current guess."""
+def render_number_bar(
+    current_guess,
+    history,
+    range_low,
+    range_high,
+    secret=None,
+    show_secret=False,
+):
+    """Render an animated number bar with range, guesses, and current guess."""
     # Filter history to only include valid integer guesses
     valid_history = [g for g in history if isinstance(g, int)]
-    
+
     # Calculate position percentages
     range_span = max(1, range_high - range_low)
 
@@ -17,7 +29,7 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
         """Keep markers inside the track to avoid edge clipping."""
         raw_pos = ((value - range_low) / range_span) * 100
         return max(3, min(97, raw_pos))
-    
+
     def get_distance_color(guess_value):
         """Calculate color based on distance from secret (blue=far, red=close)."""
         if secret is None:
@@ -46,11 +58,12 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
     
     # Build markers HTML for previous guesses
     markers_html = ""
-    for guess in valid_history[:-1] if current_guess else valid_history:
+    guess_history = valid_history[:-1] if current_guess else valid_history
+    for guess in guess_history:
         if isinstance(guess, int):
             pos_percent = clamp_position(guess)
             marker_color = get_distance_color(guess)
-            
+
             markers_html += (
                 f'<div style="position:absolute;left:{pos_percent}%;top:50%;'
                 f'transform:translate(-50%,-50%);width:12px;height:12px;'
@@ -63,7 +76,7 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
 
     # Add secret marker if enabled
     secret_marker = ""
-    if show_secret and secret is not None:
+    if show_secret and secret is not None:  # pylint: disable=too-many-branches
         secret_pos = clamp_position(secret)
         secret_marker = (
             f'<div style="position:absolute;left:{secret_pos}%;top:50%;'
@@ -77,9 +90,21 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
 
     # Current guess marker
     current_marker = ""
-    if current_guess is not None:
+    if current_guess is not None:  # pylint: disable=too-many-statements
         current_pos = clamp_position(current_guess)
         current_color = get_distance_color(current_guess)
+        
+        # Determine arrow direction based on whether guess needs to go higher or lower
+        if secret is not None:
+            if current_guess < secret:
+                arrow = "↑"  # Need to go higher
+            elif current_guess > secret:
+                arrow = "↓"  # Need to go lower
+            else:
+                arrow = "🎯"  # Exact match (won)
+        else:
+            arrow = "↓"  # Default
+        
         current_marker = (
             f'<div style="position:absolute;left:{current_pos}%;top:50%;'
             f'transform:translate(-50%,-50%);width:18px;height:18px;'
@@ -89,20 +114,24 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
             f'<div style="position:absolute;left:{current_pos}%;top:-35px;'
             f'transform:translateX(-50%);font-size:13px;'
             f'color:#4A4037;font-weight:800;'
-            f'text-shadow:0 1px 3px rgba(255,255,255,0.8);">↓ {current_guess}</div>'
+            f'text-shadow:0 1px 3px rgba(255,255,255,0.8);">{arrow} {current_guess}</div>'
         )
-    
+
     # Render the complete number bar
     html = (
-        '<div style="background: transparent; border: none; padding: 0; margin: 0;">'  
-        '<div style="position: relative; min-width: 320px; height: 60px; margin: 30px 0; padding: 30px 0;'
+        '<div style="background: transparent; border: none; padding: 0; margin: 0;">'
+        '<div style="position: relative; min-width: 320px;'
+        ' height: 60px; margin: 30px 0; padding: 30px 0;'
         ' background: linear-gradient(to right, #FFDCDC, #FFF2EB, #FFE8CD);'
-        ' border-radius: 30px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.1), 0 4px 16px rgba(255,200,150,0.2);">'
-        f'<div style="position: absolute; left: 0; top: 50%; transform: translate(0,-50%);'
+        ' border-radius: 30px; box-shadow: inset 0 2px 8px rgba(0,0,0,0.1), '
+        '0 4px 16px rgba(255,200,150,0.2);">'
+        f'<div style="position: absolute; left: 0; top: 50%; '
+        f'transform: translate(0,-50%);'
         f' background: #4A4037; color: #FFF9F5; padding: 6px 12px;'
         f' border-radius: 20px; font-weight: 700; font-size: 12px;'
         f' box-shadow: 0 2px 8px rgba(0,0,0,0.2);">{range_low}</div>'
-        f'<div style="position: absolute; right: 0; top: 50%; transform: translate(0,-50%);'
+        f'<div style="position: absolute; right: 0; top: 50%; '
+        f'transform: translate(0,-50%);'
         f' background: #4A4037; color: #FFF9F5; padding: 6px 12px;'
         f' border-radius: 20px; font-weight: 700; font-size: 12px;'
         f' box-shadow: 0 2px 8px rgba(0,0,0,0.2);">{range_high}</div>'
@@ -356,7 +385,7 @@ if "secret" not in st.session_state:
 if "attempts" not in st.session_state:
     st.session_state.attempts = 0
 if "score" not in st.session_state:
-    st.session_state.score = 0
+    st.session_state.score = 100
 if "status" not in st.session_state:
     st.session_state.status = "playing"
 if "history" not in st.session_state:
@@ -365,6 +394,8 @@ if "prev_guess" not in st.session_state:
     st.session_state.prev_guess = None
 if "show_debug" not in st.session_state:
     st.session_state.show_debug = False
+if "last_animation" not in st.session_state:
+    st.session_state.last_animation = None
 
 # Sidebar: Game Settings
 with st.sidebar:
@@ -379,7 +410,7 @@ with st.sidebar:
     attempt_limit_map = {
         "Easy": 6,
         "Normal": 8,
-        "Hard": 5,
+        "Hard": 10,
     }
     attempt_limit = attempt_limit_map[difficulty]
     
@@ -429,7 +460,7 @@ if st.session_state.status != "playing":
         if st.button("New Game", key="new_game_end"):
             st.session_state.attempts = 0
             st.session_state.secret = random.randint(low, high)
-            st.session_state.score = 0
+            st.session_state.score = 100
             st.session_state.history = []
             st.session_state.status = "playing"
             st.session_state.prev_guess = None
@@ -458,7 +489,7 @@ with center_actions:
 if new_game:
     st.session_state.attempts = 0
     st.session_state.secret = random.randint(low, high)
-    st.session_state.score = 0
+    st.session_state.score = 100
     st.session_state.history = []
     st.session_state.status = "playing"
     st.session_state.prev_guess = None
@@ -476,13 +507,19 @@ if submit:
     if not ok:
         st.session_state.history.append(raw_guess)
         st.error(f"Oops! {err} ૮ ˶̥˃ᵕ˂̥˶ ა")
+    elif guess_int < low or guess_int > high:
+        # Guess is outside the valid range for this difficulty
+        st.error(f"Oops! Your guess must be between {low} and {high}. ૮ ˶̥˃ᵕ˂̥˶ ა")
     else:
         st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
 
-        show_rolling_animation(
-            guess_int, st.session_state.attempts, st.session_state.prev_guess, low
-        )
+        # Store animation data before rerun so it persists
+        st.session_state.last_animation = {
+            "guess": guess_int,
+            "attempt": st.session_state.attempts,
+            "prev_guess": st.session_state.prev_guess,
+        }
         st.session_state.prev_guess = guess_int
 
         # FIX: Replaced alternating str/int cast with direct int secret to fix
@@ -507,8 +544,19 @@ if submit:
             st.error(
                 f"No attempts left! ૮ ˶̥˃ᵕ˂̥˶ ა The secret was {st.session_state.secret}."
             )
+        
+        # Rerun to update sidebar with new attempt count and score
+        st.rerun()
             
 st.divider()
+
+# Display the animation if one was stored from the previous submission
+if st.session_state.last_animation:
+    anim = st.session_state.last_animation
+    show_rolling_animation(
+        anim["guess"], anim["attempt"], anim["prev_guess"], low
+    )
+    st.session_state.last_animation = None  # Clear after displaying
 
 # Show the number bar visualization
 st.subheader("Number Range Tracker (˶˃ ᵕ ˂˶) .ᐟ.ᐟ")

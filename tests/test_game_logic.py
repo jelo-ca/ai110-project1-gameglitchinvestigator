@@ -120,7 +120,7 @@ class TestGetRangeForDifficulty:
     def test_hard_range(self):
         low, high = get_range_for_difficulty("Hard")
         assert low == 1
-        assert high == 50
+        assert high == 1000
 
     def test_unknown_difficulty_defaults_to_normal(self):
         low, high = get_range_for_difficulty("Unknown")

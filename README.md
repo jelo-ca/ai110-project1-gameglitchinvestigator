@@ -23,6 +23,29 @@ It wrote the code, ran away, and now the game is unplayable.
    - Run `pytest` in your terminal.
    - Keep fixing until all tests pass!
 
+## 🎯 Features
+
+### Game Mechanics
+- **Three Difficulty Levels**: Easy (1–20), Normal (1–100), Hard (1–1000) with varying attempt limits
+- **Scoring System**: Earn points based on the number of attempts needed to win (100 - 10 × attempts)
+- **Guess Validation**: Prevents invalid inputs (empty, non-numeric) from consuming attempts
+- **Attempt Tracking**: Real-time display of remaining attempts in the sidebar
+
+### Visual Enhancements
+- **Cozy Theme**: Warm color palette (peach, pink, cream, tan) with custom styling throughout the UI
+- **Rolling Animation**: Smooth animated counter that transitions from previous guess to current guess
+- **Number Range Tracker**: Interactive visualization showing:
+  - Your guess history as color-coded markers
+  - Current guess with distinct styling
+  - Secret number location (in debug mode)
+  - Distance-based coloring: Red (close) → Blue (far)
+- **Responsive Design**: Mobile-friendly interface that adapts to different screen sizes
+
+### Developer Features
+- **Debug Info Panel**: Toggle to reveal secret number, game state, and guess history
+- **Session State Management**: Robust game state persistence across Streamlit reruns
+- **Input Error Handling**: Clear error messages for invalid guesses
+
 ## 📝 Document Your Experience
 
 ### Game Purpose
