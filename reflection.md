@@ -47,3 +47,7 @@ Wrapping the secret number to protect it from being called each rerun kept it st
 I'd utilize multiple agents more in future projects. I never realized how organized and efficient it is to create multiple chat session. More specific prompting could also benefit my future workflows.
 
 AI generated code is not perfect, but its really really fast. Its much faster to check the code than writing everything from scratch.
+
+## Stretch (Claude vs Copilot Agent)
+
+I used Claude and Copilot Agents to fix bugs that occured while implementing the stretch features. Claude responded with more complete results, even adding to the idea at times while copilot agents required more specific prompts to complete the bug fixing and feature adding.
