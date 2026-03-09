@@ -88,8 +88,10 @@ Game Glitch Investigator is a number guessing game built with Streamlit. The pla
 
 ## 📸 Demo
 
-- [ ] [Insert a screenshot of your fixed, winning game here]
+- ![Winning Game](winning_game.png)
 
 ## 🚀 Stretch Features
+
+Added a number roller and a gradient number tracker for guesses.
 
 - ![Number Roller and Slider](number_roll_feat.png)
