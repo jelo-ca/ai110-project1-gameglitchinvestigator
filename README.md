@@ -3,7 +3,7 @@
 ## 🚨 The Situation
 
 You asked an AI to build a simple "Number Guessing Game" using Streamlit.
-It wrote the code, ran away, and now the game is unplayable. 
+It wrote the code, ran away, and now the game is unplayable.
 
 - You can't win.
 - The hints lie to you.
@@ -17,7 +17,7 @@ It wrote the code, ran away, and now the game is unplayable.
 ## 🕵️‍♂️ Your Mission
 
 1. **Play the game.** Open the "Developer Debug Info" tab in the app to see the secret number. Try to win.
-2. **Find the State Bug.** Why does the secret number change every time you click "Submit"? Ask ChatGPT: *"How do I keep a variable from resetting in Streamlit when I click a button?"*
+2. **Find the State Bug.** Why does the secret number change every time you click "Submit"? Ask ChatGPT: _"How do I keep a variable from resetting in Streamlit when I click a button?"_
 3. **Fix the Logic.** The hints ("Higher/Lower") are wrong. Fix them.
 4. **Refactor & Test.** - Move the logic into `logic_utils.py`.
    - Run `pytest` in your terminal.
@@ -26,12 +26,14 @@ It wrote the code, ran away, and now the game is unplayable.
 ## 🎯 Features
 
 ### Game Mechanics
+
 - **Three Difficulty Levels**: Easy (1–20), Normal (1–100), Hard (1–1000) with varying attempt limits
 - **Scoring System**: Earn points based on the number of attempts needed to win (100 - 10 × attempts)
 - **Guess Validation**: Prevents invalid inputs (empty, non-numeric) from consuming attempts
 - **Attempt Tracking**: Real-time display of remaining attempts in the sidebar
 
 ### Visual Enhancements
+
 - **Cozy Theme**: Warm color palette (peach, pink, cream, tan) with custom styling throughout the UI
 - **Rolling Animation**: Smooth animated counter that transitions from previous guess to current guess
 - **Number Range Tracker**: Interactive visualization showing:
@@ -42,6 +44,7 @@ It wrote the code, ran away, and now the game is unplayable.
 - **Responsive Design**: Mobile-friendly interface that adapts to different screen sizes
 
 ### Developer Features
+
 - **Debug Info Panel**: Toggle to reveal secret number, game state, and guess history
 - **Session State Management**: Robust game state persistence across Streamlit reruns
 - **Input Error Handling**: Clear error messages for invalid guesses
@@ -54,16 +57,16 @@ Game Glitch Investigator is a number guessing game built with Streamlit. The pla
 
 ### Bugs Found
 
-| # | Bug | Location |
-|---|-----|----------|
-| 1 | **Backwards hints** — "Go Higher" and "Go Lower" were swapped, pointing the player in the wrong direction | `logic_utils.py: check_guess()` |
-| 2 | **Secret number reset on every rerun** — the number was assigned at the top level of `app.py`, so Streamlit regenerated it on every button click | `app.py` |
-| 3 | **Attempts display off by one** — the "Attempts Left" counter showed `n+1` instead of the correct remaining count | `app.py` |
-| 4 | **New Game button broken** — clicking New Game did not properly reset game state | `app.py` |
-| 5 | **First guess not logged** — the initial guess wasn't recorded in the history until a second submit was made | `app.py` |
-| 6 | **Invalid inputs consumed attempts** — submitting empty or non-numeric input still decremented the attempt counter and was written to the guess history | `app.py` |
-| 7 | **Scoring offset bug** — a `+1` offset in `update_score` caused a first-attempt win to score 80 instead of the intended 90 | `logic_utils.py: update_score()` |
-| 8 | **Even-attempt bonus** — wrong guesses on even attempts incorrectly added points instead of deducting them | `logic_utils.py: update_score()` |
+| #   | Bug                                                                                                                                                     | Location                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| 1   | **Backwards hints** — "Go Higher" and "Go Lower" were swapped, pointing the player in the wrong direction                                               | `logic_utils.py: check_guess()`  |
+| 2   | **Secret number reset on every rerun** — the number was assigned at the top level of `app.py`, so Streamlit regenerated it on every button click        | `app.py`                         |
+| 3   | **Attempts display off by one** — the "Attempts Left" counter showed `n+1` instead of the correct remaining count                                       | `app.py`                         |
+| 4   | **New Game button broken** — clicking New Game did not properly reset game state                                                                        | `app.py`                         |
+| 5   | **First guess not logged** — the initial guess wasn't recorded in the history until a second submit was made                                            | `app.py`                         |
+| 6   | **Invalid inputs consumed attempts** — submitting empty or non-numeric input still decremented the attempt counter and was written to the guess history | `app.py`                         |
+| 7   | **Scoring offset bug** — a `+1` offset in `update_score` caused a first-attempt win to score 80 instead of the intended 90                              | `logic_utils.py: update_score()` |
+| 8   | **Even-attempt bonus** — wrong guesses on even attempts incorrectly added points instead of deducting them                                              | `logic_utils.py: update_score()` |
 
 ### Fixes Applied
 
@@ -89,4 +92,4 @@ Game Glitch Investigator is a number guessing game built with Streamlit. The pla
 
 ## 🚀 Stretch Features
 
-- [ ] [If you choose to complete Challenge 4, insert a screenshot of your Enhanced Game UI here]
+- ![Number Roller and Slider](number_roll_feat.png)

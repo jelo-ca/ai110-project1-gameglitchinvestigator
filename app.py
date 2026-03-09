@@ -17,7 +17,7 @@ def render_number_bar(
     range_high,
     secret=None,
     show_secret=False,
-):
+):  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     """Render an animated number bar with range, guesses, and current guess."""
     # Filter history to only include valid integer guesses
     valid_history = [g for g in history if isinstance(g, int)]
@@ -43,19 +43,18 @@ def render_number_bar(
         if normalized < 0.15:
             # Very close: deep red
             return "#D32F2F"
-        elif normalized < 0.3:
+        if normalized < 0.3:
             # Close: red
             return "#E85D75"
-        elif normalized < 0.5:
+        if normalized < 0.5:
             # Medium: orange/pink
             return "#FF9A8B"
-        elif normalized < 0.7:
+        if normalized < 0.7:
             # Far: light blue
             return "#6FA8DC"
-        else:
-            # Very far: blue
-            return "#4A90E2"
-    
+        # Very far: blue
+        return "#4A90E2"
+
     # Build markers HTML for previous guesses
     markers_html = ""
     guess_history = valid_history[:-1] if current_guess else valid_history
@@ -85,7 +84,7 @@ def render_number_bar(
             f'z-index:4;box-shadow:0 0 10px rgba(255,107,107,0.5);"></div>'
             f'<div style="position:absolute;left:{secret_pos}%;top:-30px;'
             f'transform:translateX(-50%);font-size:9px;'
-            f'color:#FF6B6B;font-weight:700;">🎯 {secret}</div>'
+            f'color:#FF6B6B;font-weight:700;">TARGET {secret}</div>'
         )
 
     # Current guess marker
@@ -93,18 +92,18 @@ def render_number_bar(
     if current_guess is not None:  # pylint: disable=too-many-statements
         current_pos = clamp_position(current_guess)
         current_color = get_distance_color(current_guess)
-        
+
         # Determine arrow direction based on whether guess needs to go higher or lower
         if secret is not None:
             if current_guess < secret:
-                arrow = "↑"  # Need to go higher
+                arrow = "&#8593;"  # Need to go higher
             elif current_guess > secret:
-                arrow = "↓"  # Need to go lower
+                arrow = "&#8595;"  # Need to go lower
             else:
-                arrow = "🎯"  # Exact match (won)
+                arrow = "&#9733;"  # Exact match (won)
         else:
-            arrow = "↓"  # Default
-        
+            arrow = "&#8595;"  # Default
+
         current_marker = (
             f'<div style="position:absolute;left:{current_pos}%;top:50%;'
             f'transform:translate(-50%,-50%);width:18px;height:18px;'
@@ -145,11 +144,11 @@ def show_rolling_animation(final_number, attempt_num, prev_guess, range_low):
     """Counts from the previous guess to the current guess, then locks in."""
     placeholder = st.empty()
     start = prev_guess if prev_guess is not None else range_low
-    direction = "↑" if final_number >= start else "↓"
+    direction = "&#8593;" if final_number >= start else "&#8595;"
     steps = 22
     for i in range(steps):
         # Linear interpolation from start toward final_number (stops just short)
-        t = i / steps  # 0.0 … ~0.955, never reaches 1.0 so final frame stays distinct
+        t = i / steps  # 0.0 ... ~0.955, never reaches 1.0 so final frame stays distinct
         rolling_num = round(start + (final_number - start) * t)
         # Exponential slow-down: fast at start, slow near end
         delay = 0.03 + (i / steps) ** 2 * 0.18
@@ -164,7 +163,7 @@ def show_rolling_animation(final_number, attempt_num, prev_guess, range_low):
                           font-family:monospace; text-shadow:0 2px 8px rgba(255,200,150,0.4);
                           min-width:120px; display:inline-block;">{rolling_num}</div>
               <div style="font-size:11px; color:#4A4037; margin-top:6px;">
-                {direction} counting…</div>
+                                {direction} counting...</div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -180,18 +179,18 @@ def show_rolling_animation(final_number, attempt_num, prev_guess, range_low):
                     box-shadow:0 6px 20px rgba(255,180,180,0.35);">
           <div style="font-size:12px; color:#4A4037; letter-spacing:3px;
                       text-transform:uppercase; margin-bottom:4px;">
-            Attempt #{attempt_num} — (˶˃ ᵕ ˂˶) .ᐟ.ᐟ</div>
+                        Attempt #{attempt_num} - locked in</div>
           <div style="font-size:88px; font-weight:900; color:#4A4037; line-height:1;
                       font-family:monospace; text-shadow:0 2px 8px rgba(255,200,150,0.4);
                       min-width:120px; display:inline-block;">{final_number}</div>
-          <div style="font-size:11px; color:#4A4037; margin-top:6px;">✩ success</div>
+          <div style="font-size:11px; color:#4A4037; margin-top:6px;">success</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
     time.sleep(0.8)
 
-st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
+st.set_page_config(page_title="Glitchy Guesser", page_icon=":video_game:")
 
 # Apply cozy theme styling
 st.markdown("""
@@ -204,12 +203,12 @@ st.markdown("""
             --cozy-tan: #FFD6BA;
             --text-dark: #4A4037;
         }
-        
+
         /* Main background */
         .stApp {
             background-color: #FFF9F5;
         }
-        
+
         /* Text color for Streamlit-rendered content */
         [data-testid="stMarkdownContainer"],
         [data-testid="stMetricValue"],
@@ -218,27 +217,27 @@ st.markdown("""
         [data-testid="stNotificationContent"] {
             color: #4A4037 !important;
         }
-        
+
         /* Headers and titles */
         h1, h2, h3, h4, h5, h6 {
             color: #4A4037 !important;
         }
-        
+
         /* Labels for inputs */
         [data-testid="stWidgetLabel"] {
             color: #4A4037 !important;
         }
-        
+
         /* Checkbox and radio styling */
         .stCheckbox > label, .stRadio > label {
             color: #4A4037 !important;
         }
-        
+
         /* Select dropdown text */
         .stSelectbox label, .stMultiSelect label {
             color: #4A4037 !important;
         }
-        
+
         /* Button styling */
         .stButton > button {
             background-color: #FFD6BA;
@@ -254,7 +253,7 @@ st.markdown("""
             box-shadow: 0 4px 12px rgba(255,200,150,0.3);
             transform: translateY(-2px);
         }
-        
+
         /* Text input styling */
         .stTextInput > div > div > input {
             background-color: #FFF2EB;
@@ -323,7 +322,7 @@ st.markdown("""
                 padding: 0.15rem 0;
             }
         }
-        
+
         /* Sidebar styling */
         .stSidebar {
             background-color: #FFDCDC;
@@ -335,7 +334,7 @@ st.markdown("""
             color: #4A4037 !important;
         }
         .stSidebar label { color: #4A4037 !important; }
-        
+
         /* Expander styling */
         .stExpander {
             background-color: #FFF2EB;
@@ -347,7 +346,7 @@ st.markdown("""
         .stExpander [data-testid="stMarkdownContainer"] {
             color: #4A4037 !important;
         }
-        
+
         /* Message boxes */
         .stSuccess, .stError, .stWarning, .stInfo, .stException {
             color: #4A4037 !important;
@@ -355,18 +354,18 @@ st.markdown("""
         .stSuccess > div, .stError > div, .stWarning > div, .stInfo > div {
             color: #4A4037 !important;
         }
-        
+
         /* Caption text */
         .stCaption {
             color: #4A4037 !important;
         }
-        
+
         /* Remove Streamlit container styling around number bar */
         [data-testid="stMarkdownContainer"] {
             background: transparent !important;
             border: none !important;
         }
-        
+
         /* Remove markdown container styling around number bar */
         [data-testid="stMarkdownContainer"] {
             background: transparent !important;
@@ -399,23 +398,23 @@ if "last_animation" not in st.session_state:
 
 # Sidebar: Game Settings
 with st.sidebar:
-    st.header("Settings (˶˃ ᵕ ˂˶)")
-    
+    st.header("Settings")
+
     difficulty = st.selectbox(
         "Pick your difficulty",
         ["Easy", "Normal", "Hard"],
         index=1,
     )
-    
+
     attempt_limit_map = {
         "Easy": 6,
         "Normal": 8,
         "Hard": 10,
     }
     attempt_limit = attempt_limit_map[difficulty]
-    
+
     low, high = get_range_for_difficulty(difficulty)
-    
+
     st.divider()
     st.subheader("Info")
     st.metric("Attempts Left", attempt_limit - st.session_state.attempts)
@@ -429,18 +428,19 @@ with st.sidebar:
         key="show_debug",
         help="Display secret number, attempts, and game state information"
     )
-    
+
     # Display debug info in sidebar if enabled
     if st.session_state.show_debug:
         st.divider()
-        st.subheader("Debug Info (˶˃ ᵕ ˂˶)")
+        st.subheader("Debug Info")
         st.write(f"**Secret:** {st.session_state.secret}")
         st.write(f"**Attempts:** {st.session_state.attempts}")
         st.write(f"**Score:** {st.session_state.score}")
         st.write(f"**Status:** {st.session_state.status}")
         if st.session_state.history:
-            history_text = " → ".join(str(g) for g in st.session_state.history)
-            st.write(f"**History:** {history_text}")
+            st.write(
+                f"**History:** {' -> '.join(str(g) for g in st.session_state.history)}"
+            )
         else:
             st.write("**History:** No guesses yet")
 
@@ -451,10 +451,10 @@ if st.session_state.secret is None:
 # Check game status before showing input
 if st.session_state.status != "playing":
     if st.session_state.status == "won":
-        st.success("You already won! ૮ ˶ᵔ ᵕ ᵔ˶ ა Ready for another cozy round?")
+        st.success("You already won! Ready for another cozy round?")
     else:
-        st.error("Game over. Start a new game to try again ૮ ˶̥˃ᵕ˂̥˶ ა")
-    
+        st.error("Game over. Start a new game to try again.")
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("New Game", key="new_game_end"):
@@ -464,12 +464,12 @@ if st.session_state.status != "playing":
             st.session_state.history = []
             st.session_state.status = "playing"
             st.session_state.prev_guess = None
-            st.success("Fresh start! (˶˃ ᵕ ˂˶) .ᐟ.ᐟ")
+            st.success("Fresh start!")
             st.rerun()
     st.stop()
 
 # Game Input Section
-st.subheader("Make Your Guess (˶˃ ᵕ ˂˶)")
+st.subheader("Make Your Guess")
 
 raw_guess = st.text_input(
     "Enter a number:",
@@ -493,7 +493,7 @@ if new_game:
     st.session_state.history = []
     st.session_state.status = "playing"
     st.session_state.prev_guess = None
-    st.success("Fresh start! (˶˃ ᵕ ˂˶) .ᐟ.ᐟ")
+    st.success("Fresh start!")
     st.rerun()
 
 st.divider()
@@ -506,10 +506,12 @@ if submit:
 
     if not ok:
         st.session_state.history.append(raw_guess)
-        st.error(f"Oops! {err} ૮ ˶̥˃ᵕ˂̥˶ ა")
+        st.error(f"Oops! {err}")
     elif guess_int < low or guess_int > high:
         # Guess is outside the valid range for this difficulty
-        st.error(f"Oops! Your guess must be between {low} and {high}. ૮ ˶̥˃ᵕ˂̥˶ ა")
+        st.error(
+            f"Oops! Your guess must be between {low} and {high}."
+        )
     else:
         st.session_state.attempts += 1
         st.session_state.history.append(guess_int)
@@ -536,18 +538,19 @@ if submit:
             st.balloons()
             st.session_state.status = "won"
             st.success(
-                f"You won! ૮ ˶ᵔ ᵕ ᵔ˶ ა The secret was {st.session_state.secret}. "
+                f"You won! The secret was {st.session_state.secret}. "
                 f"Final score: {st.session_state.score}"
             )
         elif st.session_state.attempts >= attempt_limit:
             st.session_state.status = "lost"
             st.error(
-                f"No attempts left! ૮ ˶̥˃ᵕ˂̥˶ ა The secret was {st.session_state.secret}."
+                "No attempts left! Game over. "
+                f"The secret was {st.session_state.secret}."
             )
-        
+
         # Rerun to update sidebar with new attempt count and score
         st.rerun()
-            
+
 st.divider()
 
 # Display the animation if one was stored from the previous submission
@@ -559,15 +562,24 @@ if st.session_state.last_animation:
     st.session_state.last_animation = None  # Clear after displaying
 
 # Show the number bar visualization
-st.subheader("Number Range Tracker (˶˃ ᵕ ˂˶) .ᐟ.ᐟ")
 if st.session_state.history:
     # Show the last guess as current if we have history
-    last_guess = st.session_state.history[-1] if isinstance(st.session_state.history[-1], int) else None
-    render_number_bar(last_guess, st.session_state.history, low, high, secret=st.session_state.secret)
+    last_guess = (
+        st.session_state.history[-1]
+        if isinstance(st.session_state.history[-1], int)
+        else None
+    )
+    render_number_bar(
+        last_guess,
+        st.session_state.history,
+        low,
+        high,
+        secret=st.session_state.secret,
+    )
 else:
     # Show empty bar with just the range
     render_number_bar(None, [], low, high, secret=st.session_state.secret)
 
 st.divider()
 
-st.caption("Made with coziness and a sprinkle of chaos (˶˃ ᵕ ˂˶) .ᐟ.ᐟ")
+st.caption("Made with coziness and a sprinkle of chaos")
