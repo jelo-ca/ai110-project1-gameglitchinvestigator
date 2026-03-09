@@ -17,6 +17,7 @@ def render_number_bar(
     range_high,
     secret=None,
     show_secret=False,
+    is_won=False,
 ):  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     """Render an animated number bar with range, guesses, and current guess."""
     # Filter history to only include valid integer guesses
@@ -35,6 +36,9 @@ def render_number_bar(
         if secret is None:
             return "#B8A398"
         distance = abs(guess_value - secret)
+        # If exact match, return green
+        if distance == 0:
+            return "#28a745"  # Green for correct guess
         max_distance = range_span
         # Normalize distance to 0-1 (0=exact match, 1=furthest possible)
         normalized = min(distance / max_distance, 1.0)
@@ -140,7 +144,7 @@ def render_number_bar(
     st.markdown(html, unsafe_allow_html=True)
 
 
-def show_rolling_animation(final_number, attempt_num, prev_guess, range_low):
+def show_rolling_animation(final_number, attempt_num, prev_guess, range_low, is_won=False):
     """Counts from the previous guess to the current guess, then locks in."""
     placeholder = st.empty()
     start = prev_guess if prev_guess is not None else range_low
@@ -171,19 +175,22 @@ def show_rolling_animation(final_number, attempt_num, prev_guess, range_low):
         time.sleep(delay)
 
     # Final reveal: land on the actual guess
+    final_bg = "linear-gradient(135deg,#90EE90,#98FB98)" if is_won else "linear-gradient(135deg,#FFDCDC,#FFF2EB)"
+    final_shadow = "0 6px 20px rgba(40,167,69,0.5)" if is_won else "0 6px 20px rgba(255,180,180,0.35)"
+    final_text = "🎉 WINNER! 🎉" if is_won else "success"
     placeholder.markdown(
         f"""
         <div style="text-align:center; padding:18px 0;
-                    background:linear-gradient(135deg,#FFDCDC,#FFF2EB);
+                    background:{final_bg};
                     border-radius:14px; margin:8px 0;
-                    box-shadow:0 6px 20px rgba(255,180,180,0.35);">
+                    box-shadow:{final_shadow};">
           <div style="font-size:12px; color:#4A4037; letter-spacing:3px;
                       text-transform:uppercase; margin-bottom:4px;">
                         Attempt #{attempt_num} - locked in</div>
           <div style="font-size:88px; font-weight:900; color:#4A4037; line-height:1;
                       font-family:monospace; text-shadow:0 2px 8px rgba(255,200,150,0.4);
                       min-width:120px; display:inline-block;">{final_number}</div>
-          <div style="font-size:11px; color:#4A4037; margin-top:6px;">success</div>
+          <div style="font-size:11px; color:#4A4037; margin-top:6px;">{final_text}</div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -323,18 +330,6 @@ st.markdown("""
             }
         }
 
-        /* Sidebar styling */
-        .stSidebar {
-            background-color: #FFDCDC;
-        }
-        .stSidebar * {
-            color: #4A4037 !important;
-        }
-        .stSidebar [data-testid="stMarkdownContainer"] {
-            color: #4A4037 !important;
-        }
-        .stSidebar label { color: #4A4037 !important; }
-
         /* Expander styling */
         .stExpander {
             background-color: #FFF2EB;
@@ -395,96 +390,99 @@ if "show_debug" not in st.session_state:
     st.session_state.show_debug = False
 if "last_animation" not in st.session_state:
     st.session_state.last_animation = None
+if "difficulty" not in st.session_state:
+    st.session_state.difficulty = "Normal"
+if "settings_expanded" not in st.session_state:
+    st.session_state.settings_expanded = False
 
-# Sidebar: Game Settings
-with st.sidebar:
-    st.header("Settings")
+# Game Settings (no sidebar)
+difficulty = st.session_state.difficulty
 
-    difficulty = st.selectbox(
-        "Pick your difficulty",
-        ["Easy", "Normal", "Hard"],
-        index=1,
-    )
+attempt_limit_map = {
+    "Easy": 6,
+    "Normal": 8,
+    "Hard": 10,
+}
+attempt_limit = attempt_limit_map[difficulty]
 
-    attempt_limit_map = {
-        "Easy": 6,
-        "Normal": 8,
-        "Hard": 10,
-    }
-    attempt_limit = attempt_limit_map[difficulty]
+low, high = get_range_for_difficulty(difficulty)
 
-    low, high = get_range_for_difficulty(difficulty)
-
-    st.divider()
-    st.subheader("Info")
+col_a, col_b, col_c = st.columns(3)
+with col_a:
     st.metric("Attempts Left", attempt_limit - st.session_state.attempts)
+with col_b:
     st.metric("Current Score", st.session_state.score)
+with col_c:
     st.metric("Range", f"{low} - {high}")
-
-    st.divider()
-    st.subheader("Developer Options")
-    st.checkbox(
-        "Show Debug Info",
-        key="show_debug",
-        help="Display secret number, attempts, and game state information"
-    )
-
-    # Display debug info in sidebar if enabled
-    if st.session_state.show_debug:
-        st.divider()
-        st.subheader("Debug Info")
-        st.write(f"**Secret:** {st.session_state.secret}")
-        st.write(f"**Attempts:** {st.session_state.attempts}")
-        st.write(f"**Score:** {st.session_state.score}")
-        st.write(f"**Status:** {st.session_state.status}")
-        if st.session_state.history:
-            st.write(
-                f"**History:** {' -> '.join(str(g) for g in st.session_state.history)}"
-            )
-        else:
-            st.write("**History:** No guesses yet")
 
 # Initialize game if needed
 if st.session_state.secret is None:
     st.session_state.secret = random.randint(low, high)
 
-# Check game status before showing input
-if st.session_state.status != "playing":
-    if st.session_state.status == "won":
-        st.success("You already won! Ready for another cozy round?")
-    else:
-        st.error("Game over. Start a new game to try again.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("New Game", key="new_game_end"):
-            st.session_state.attempts = 0
-            st.session_state.secret = random.randint(low, high)
-            st.session_state.score = 100
-            st.session_state.history = []
-            st.session_state.status = "playing"
-            st.session_state.prev_guess = None
-            st.success("Fresh start!")
-            st.rerun()
-    st.stop()
-
 # Game Input Section
 st.subheader("Make Your Guess")
 
-raw_guess = st.text_input(
-    "Enter a number:",
-    placeholder=f"{low} to {high}",
-    key=f"guess_input_{difficulty}",
-)
+# Disable input if game is over
+if st.session_state.status != "playing":
+    raw_guess = st.text_input(
+        "Enter a number:",
+        placeholder=f"{low} to {high}",
+        key=f"guess_input_{difficulty}",
+        disabled=True,
+    )
+else:
+    raw_guess = st.text_input(
+        "Enter a number:",
+        placeholder=f"{low} to {high}",
+        key=f"guess_input_{difficulty}",
+    )
 
-left_spacer, center_col, right_spacer = st.columns([1, 1.2, 1])
-with center_col:
-    submit = st.button("Submit", use_container_width=True)
-
-# New Game button
-_, center_actions, _ = st.columns([1, 1.2, 1])
-with center_actions:
+# Action buttons: Submit, Settings, New Game
+col1, col2, col3 = st.columns([1, 1, 1])
+with col1:
+    submit = st.button("Submit", use_container_width=True, disabled=(st.session_state.status != "playing"))
+with col2:
+    settings_btn = st.button("Settings", use_container_width=True, key="settings_button")
+with col3:
     new_game = st.button("New Game", key="new_game_top", use_container_width=True)
+
+# Settings panel (appears when settings button is clicked)
+if settings_btn:
+    st.session_state.settings_expanded = not st.session_state.settings_expanded
+
+if st.session_state.settings_expanded:
+    with st.expander("⚙️ Game Settings", expanded=True):
+        new_difficulty = st.selectbox(
+            "Pick your difficulty",
+            ["Easy", "Normal", "Hard"],
+            index=["Easy", "Normal", "Hard"].index(st.session_state.difficulty),
+        )
+        
+        if new_difficulty != st.session_state.difficulty:
+            st.session_state.difficulty = new_difficulty
+            st.rerun()
+        st.subheader("Developer Options")
+        st.checkbox(
+            "Show Debug Info",
+            key="show_debug",
+            help="Display secret number, attempts, and game state information"
+        )
+        
+        # Display debug info if enabled
+        if st.session_state.show_debug:
+            st.divider()
+            st.subheader("Debug Info")
+            st.write(f"**Secret:** {st.session_state.secret}")
+            st.write(f"**Attempts:** {st.session_state.attempts}")
+            st.write(f"**Score:** {st.session_state.score}")
+            st.write(f"**Status:** {st.session_state.status}")
+            if st.session_state.history:
+                st.write(
+                    f"**History:** {' -> '.join(str(g) for g in st.session_state.history)}"
+                )
+            else:
+                st.write("**History:** No guesses yet")
+
 
 if new_game:
     st.session_state.attempts = 0
@@ -496,10 +494,8 @@ if new_game:
     st.success("Fresh start!")
     st.rerun()
 
-st.divider()
-
 # Game Results Section
-if submit:
+if submit and st.session_state.status == "playing":
     # FIX: Merged two submit blocks and moved attempt increment inside the
     # valid-guess branch so invalid inputs no longer consume attempts.
     ok, guess_int, err = parse_guess(raw_guess)
@@ -535,12 +531,7 @@ if submit:
         )
 
         if outcome == "Win":
-            st.balloons()
             st.session_state.status = "won"
-            st.success(
-                f"You won! The secret was {st.session_state.secret}. "
-                f"Final score: {st.session_state.score}"
-            )
         elif st.session_state.attempts >= attempt_limit:
             st.session_state.status = "lost"
             st.error(
@@ -551,17 +542,7 @@ if submit:
         # Rerun to update sidebar with new attempt count and score
         st.rerun()
 
-st.divider()
-
-# Display the animation if one was stored from the previous submission
-if st.session_state.last_animation:
-    anim = st.session_state.last_animation
-    show_rolling_animation(
-        anim["guess"], anim["attempt"], anim["prev_guess"], low
-    )
-    st.session_state.last_animation = None  # Clear after displaying
-
-# Show the number bar visualization
+# Show the number bar visualization first (so it stays visible during animation)
 if st.session_state.history:
     # Show the last guess as current if we have history
     last_guess = (
@@ -575,10 +556,28 @@ if st.session_state.history:
         low,
         high,
         secret=st.session_state.secret,
+        is_won=(st.session_state.status == "won"),
     )
 else:
     # Show empty bar with just the range
-    render_number_bar(None, [], low, high, secret=st.session_state.secret)
+    render_number_bar(None, [], low, high, secret=st.session_state.secret, is_won=False)
+
+# Display the animation if one was stored from the previous submission
+if st.session_state.last_animation:
+    anim = st.session_state.last_animation
+    show_rolling_animation(
+        anim["guess"], anim["attempt"], anim["prev_guess"], low,
+        is_won=(st.session_state.status == "won")
+    )
+    st.session_state.last_animation = None  # Clear after displaying
+
+# Display winning message and balloons after animation
+if st.session_state.status == "won":
+    st.balloons()
+    st.success(
+        f"🎉 You won! The secret was {st.session_state.secret}. "
+        f"Final score: {st.session_state.score}"
+    )
 
 st.divider()
 
