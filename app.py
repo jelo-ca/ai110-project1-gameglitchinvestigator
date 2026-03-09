@@ -18,25 +18,38 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
         raw_pos = ((value - range_low) / range_span) * 100
         return max(3, min(97, raw_pos))
     
+    def get_distance_color(guess_value):
+        """Calculate color based on distance from secret (blue=far, red=close)."""
+        if secret is None:
+            return "#B8A398"
+        distance = abs(guess_value - secret)
+        max_distance = range_span
+        # Normalize distance to 0-1 (0=exact match, 1=furthest possible)
+        normalized = min(distance / max_distance, 1.0)
+        # Interpolate from red (close) to blue (far)
+        # Red: #E85D75, Blue: #4A90E2
+        if normalized < 0.15:
+            # Very close: deep red
+            return "#D32F2F"
+        elif normalized < 0.3:
+            # Close: red
+            return "#E85D75"
+        elif normalized < 0.5:
+            # Medium: orange/pink
+            return "#FF9A8B"
+        elif normalized < 0.7:
+            # Far: light blue
+            return "#6FA8DC"
+        else:
+            # Very far: blue
+            return "#4A90E2"
+    
     # Build markers HTML for previous guesses
     markers_html = ""
     for guess in valid_history[:-1] if current_guess else valid_history:
         if isinstance(guess, int):
             pos_percent = clamp_position(guess)
-            
-            # Determine marker color based on distance from secret
-            if secret is not None:
-                distance = abs(guess - secret)
-                max_distance = range_span / 2
-                if distance > max_distance:
-                    # Far from secret: blue
-                    marker_color = "#4A90E2"
-                else:
-                    # Close to secret: red
-                    marker_color = "#E85D75"
-            else:
-                # Default color if no secret
-                marker_color = "#B8A398"
+            marker_color = get_distance_color(guess)
             
             markers_html += (
                 f'<div style="position:absolute;left:{pos_percent}%;top:50%;'
@@ -66,10 +79,11 @@ def render_number_bar(current_guess, history, range_low, range_high, secret=None
     current_marker = ""
     if current_guess is not None:
         current_pos = clamp_position(current_guess)
+        current_color = get_distance_color(current_guess)
         current_marker = (
             f'<div style="position:absolute;left:{current_pos}%;top:50%;'
             f'transform:translate(-50%,-50%);width:18px;height:18px;'
-            f'background:linear-gradient(135deg,#FFD6BA,#FFE8CD);'
+            f'background:{current_color};'
             f'border:3px solid #4A4037;border-radius:50%;z-index:3;'
             f'box-shadow:0 4px 12px rgba(255,200,150,0.5);"></div>'
             f'<div style="position:absolute;left:{current_pos}%;top:-35px;'
@@ -333,7 +347,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Cozy Number Guess (˶˃ ᵕ ˂˶) .ᐟ.ᐟ")
+st.title("Number Guessing Game")
 st.caption("A charming guessing game with a little twist...")
 
 # Initialize session state first
